@@ -26,7 +26,7 @@ set(apriltags_VERSION_MAJOR 1)
 set(apriltags_VERSION_MINOR 0)
 set(apriltags_VERSION "${apriltags_VERSION_MAJOR}.${apriltags_VERSION_MINOR}")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # OpenCV for camera interface, looks for a symlink
 find_package(OpenCV)
@@ -38,7 +38,6 @@ if( OpenCV_VERSION VERSION_EQUAL "3")
 	list(APPEND apriltags_DEFS "-DOPENCV3=1")
 endif()
 
-find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 list(APPEND apriltags_INCLUDES ${EIGEN_INCLUDE_DIRS} )
 
