@@ -4,7 +4,9 @@
 
 project(apriltags)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
+
+set(CMAKE_CXX_STANDARD 17)
 
 # Defaults to release build
 if (NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -42,7 +44,6 @@ include_directories(${EIGEN_INCLUDE_DIRS})
 list(APPEND apriltags_INCLUDES ${EIGEN_INCLUDE_DIRS} )
 
 # Camera drivers
-find_package(V4L2 REQUIRED)
 include_directories(${V4L2_INCLUDE_DIRS})
 list(APPEND apriltags_LIBS ${V4L2_LIBRARIES})
 
