@@ -4,7 +4,9 @@
 
 project(apriltags)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
+
+set(CMAKE_CXX_STANDARD 17)
 
 # Defaults to release build
 if (NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -26,7 +28,7 @@ set(apriltags_VERSION_MAJOR 1)
 set(apriltags_VERSION_MINOR 0)
 set(apriltags_VERSION "${apriltags_VERSION_MAJOR}.${apriltags_VERSION_MINOR}")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # OpenCV for camera interface, looks for a symlink
 find_package(OpenCV)
@@ -38,12 +40,10 @@ if( OpenCV_VERSION VERSION_GREATER_EQUAL "3")
 	list(APPEND apriltags_DEFS "-DOPENCV3=1")
 endif()
 
-find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 list(APPEND apriltags_INCLUDES ${EIGEN_INCLUDE_DIRS} )
 
 # Camera drivers
-find_package(V4L2 REQUIRED)
 include_directories(${V4L2_INCLUDE_DIRS})
 list(APPEND apriltags_LIBS ${V4L2_LIBRARIES})
 

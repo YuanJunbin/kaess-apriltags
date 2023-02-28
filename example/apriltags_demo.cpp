@@ -350,12 +350,12 @@ public:
          << m_cap.get(cv::CAP_PROP_FRAME_WIDTH) << "x"
          << m_cap.get(cv::CAP_PROP_FRAME_HEIGHT) << endl;
 #else
-	m_cap.set(CV_CAP_PROP_FRAME_WIDTH, m_width);
-    m_cap.set(CV_CAP_PROP_FRAME_HEIGHT, m_height);
+	m_cap.set(cv::CAP_PROP_FRAME_WIDTH, m_width);
+    m_cap.set(cv::CAP_PROP_FRAME_HEIGHT, m_height);
     cout << "Camera successfully opened (ignore error messages above...)" << endl;
     cout << "Actual resolution: "
-         << m_cap.get(CV_CAP_PROP_FRAME_WIDTH) << "x"
-         << m_cap.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
+         << m_cap.get(cv::CAP_PROP_FRAME_WIDTH) << "x"
+         << m_cap.get(cv::CAP_PROP_FRAME_HEIGHT) << endl;
 #endif
     
 
@@ -411,7 +411,7 @@ public:
 #if OPENCV3
 	cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
 #else
-    cv::cvtColor(image, image_gray, CV_BGR2GRAY);
+    cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
 #endif
 	
     double t0;
@@ -499,7 +499,7 @@ public:
     }
     // show the current image including any detections
     if (m_draw) {
-      for (int i=0; i<detections.size(); i++) {
+      for (long unsigned int i=0; i<detections.size(); i++) {
         // also highlight in the image
         detections[i].draw(image);
       }
