@@ -20,6 +20,7 @@ using namespace std;
 #include <vector>
 #include <list>
 #include <sys/time.h>
+#include <filesystem>
 
 const string usage = "\n"
   "Usage:\n"
@@ -141,6 +142,8 @@ class Demo {
   double m_px; // camera principal point
   double m_py;
 
+  std::string output_filename;
+
   int m_deviceId; // camera id (in case of multiple cameras)
 
   list<string> m_imgNames;
@@ -201,7 +204,7 @@ public:
   // parse command line options to change default behavior
   void parseOptions(int argc, char* argv[]) {
     int c;
-    while ((c = getopt(argc, argv, ":h?adtC:F:H:S:W:E:G:B:D:")) != -1) {
+    while ((c = getopt(argc, argv, ":h?adtC:F:H:S:W:E:G:B:D:o:")) != -1) {
       // Each option character has to be in the string in getopt();
       // the first colon changes the error character from '?' to ':';
       // a colon after an option means that there is an extra
@@ -221,6 +224,10 @@ public:
         break;
       case 't':
         m_timing = true;
+        break;
+      case 'o':
+        output_filename = optarg;
+        std::cout << "writing results to " << output_filename << std::endl;
         break;
       case 'C':
         setTagCodes(optarg);
@@ -418,11 +425,78 @@ public:
     }
 
     // print out each detection
-    cout << detections.size() << " tags detected:" << endl;
-    for (int i=0; i<detections.size(); i++) {
-      print_detection(detections[i]);
+    cout << detections.size() << " tags detected." << endl;
+    // for (int i=0; i<detections.size(); i++) {
+      // print_detection(detections[i]);
+    // }
+
+    // show the current image including any detections
+    if (m_draw) {
+      for (int i=0; i<detections.size(); i++) {
+        // also highlight in the image
+        detections[i].draw(image);
+      }
+      imshow(windowName, image); // OpenCV call
     }
 
+    // optionally send tag information to serial port (e.g. to Arduino)
+    if (m_arduino) {
+      if (detections.size() > 0) {
+        // only the first detected tag is sent out for now
+        Eigen::Vector3d translation;
+        Eigen::Matrix3d rotation;
+        detections[0].getRelativeTranslationRotation(m_tagSize, m_fx, m_fy, m_px, m_py,
+                                                     translation, rotation);
+        m_serial.print(detections[0].id);
+        m_serial.print(",");
+        m_serial.print(translation(0));
+        m_serial.print(",");
+        m_serial.print(translation(1));
+        m_serial.print(",");
+        m_serial.print(translation(2));
+        m_serial.print("\n");
+      } else {
+        // no tag detected: tag ID = -1
+        m_serial.print("-1,0.0,0.0,0.0\n");
+      }
+    }
+  }
+
+  void processImage(cv::Mat& image, cv::Mat& image_gray, std::vector<std::pair<double, double>> &all_detections) {
+    // alternative way is to grab, then retrieve; allows for
+    // multiple grab when processing below frame rate - v4l keeps a
+    // number of frames buffered, which can lead to significant lag
+    //      m_cap.grab();
+    //      m_cap.retrieve(image);
+
+    // detect April tags (requires a gray scale image)
+#if OPENCV3
+	cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
+#else
+    cv::cvtColor(image, image_gray, CV_BGR2GRAY);
+#endif
+	
+    double t0;
+    if (m_timing) {
+      t0 = tic();
+    }
+    vector<AprilTags::TagDetection> detections = m_tagDetector->extractTags(image_gray);
+    if (m_timing) {
+      double dt = tic()-t0;
+      cout << "Extracting tags took " << dt << " seconds." << endl;
+    }
+
+    // print out each detection
+    cout << detections.size() << " tags detected." << endl;
+    // for (int i=0; i<detections.size(); i++) {
+      // print_detection(detections[i]);
+    // }
+    for (auto one_detection : detections) {
+      all_detections.push_back(one_detection.p[0]);
+      all_detections.push_back(one_detection.p[1]);
+      all_detections.push_back(one_detection.p[2]);
+      all_detections.push_back(one_detection.p[3]);
+    }
     // show the current image including any detections
     if (m_draw) {
       for (int i=0; i<detections.size(); i++) {
@@ -459,12 +533,23 @@ public:
   void loadImages() {
     cv::Mat image;
     cv::Mat image_gray;
+    int current_frame_detections = 0;
+    std::vector<std::pair<double, double>> all_detections;
 
     for (list<string>::iterator it=m_imgNames.begin(); it!=m_imgNames.end(); it++) {
       image = cv::imread(*it); // load image with opencv
-      processImage(image, image_gray);
-      while (cv::waitKey(100) == -1) {}
+      processImage(image, image_gray, all_detections);
+      // while (cv::waitKey(100) == -1) {}
     }
+
+    // Write detections into a file here.
+    ofstream detectionsfile;
+    detectionsfile.open(output_filename);
+    
+    for(auto i : all_detections){
+      detectionsfile << i.first << "," << i.second << "\n";
+    }
+    detectionsfile.close();
   }
 
   // Video or image processing?

@@ -27,7 +27,7 @@ using namespace std;
 namespace AprilTags {
 
 TagFamily::TagFamily(const TagCodes& tagCodes)
-  : blackBorder(1), bits(tagCodes.bits), dimension((int)std::sqrt((float)bits)),
+  : blackBorder(2), bits(tagCodes.bits), dimension((int)std::sqrt((float)bits)),
     minimumHammingDistance(tagCodes.minHammingDistance),
     errorRecoveryBits(1), codes() {
   if ( bits != dimension*dimension )
