@@ -32,6 +32,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # OpenCV for camera interface, looks for a symlink
 find_package(OpenCV)
+find_package(V4L2)
 message(STATUS "OpenCV found at: ${OpenCV_INCLUDE_DIRS}")
 include_directories(${OpenCV_INCLUDE_DIRS})
 list(APPEND apriltags_LIBS ${OpenCV_LIBS})
