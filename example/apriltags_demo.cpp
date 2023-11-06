@@ -499,7 +499,7 @@ public:
   void processImage(
     cv::Mat &image,
     cv::Mat &image_gray,
-    std::vector<std::vector<std::pair<double, double> > > &all_detections)
+    std::vector<std::vector<std::pair<int, std::vector<std::pair<double, double>>>>> &all_detections)
   {
     // alternative way is to grab, then retrieve; allows for
     // multiple grab when processing below frame rate - v4l keeps a
@@ -514,7 +514,7 @@ public:
     cv::cvtColor(image, image_gray, CV_BGR2GRAY);
 #endif
 
-    std::vector<std::pair<double,double>> frame_detections;
+    std::vector<std::pair<int, std::vector<std::pair<double,double>>>> frame_detections_w_id;
 
     double t0;
     if (m_timing)
@@ -535,12 +535,18 @@ public:
     // }
     for (auto one_detection : detections)
     {
-      frame_detections.push_back(one_detection.p[0]);
-      frame_detections.push_back(one_detection.p[1]);
-      frame_detections.push_back(one_detection.p[2]);
-      frame_detections.push_back(one_detection.p[3]);
+      std::pair<int, std::vector<std::pair<double,double>>> detection_w_id;
+      std::vector<std::pair<double,double>> tag_detection;
+      tag_detection.push_back(one_detection.p[0]);
+      tag_detection.push_back(one_detection.p[1]);
+      tag_detection.push_back(one_detection.p[2]);
+      tag_detection.push_back(one_detection.p[3]);
+      detection_w_id.second = tag_detection;
+      detection_w_id.first = one_detection.id;
+      frame_detections_w_id.push_back(detection_w_id);
     }
-    all_detections.push_back(frame_detections);
+    
+    all_detections.push_back(frame_detections_w_id);
     // show the current image including any detections
     if (m_draw)
     {
@@ -587,7 +593,7 @@ public:
     int current_frame_detections = 0;
     // First vector corresponds to frame #
     // Second vector corresponds to coordinates.
-    std::vector <std::vector<std::pair<double, double>>> all_detections;
+    std::vector<std::vector<std::pair<int, std::vector<std::pair<double, double>>>>> all_detections;
 
     for (list<string>::iterator it = m_imgNames.begin(); it != m_imgNames.end(); it++)
     {
@@ -601,10 +607,18 @@ public:
     detectionsfile.open(output_filename);
 
     int frame_n = 0;
-    for (auto i : all_detections)
+    for (auto detections_per_frame : all_detections)
     {
-      for (auto frame_dets : i) {
-        detectionsfile << frame_n << "," << frame_dets.first << "," << frame_dets.second << "\n";
+      for (auto detection : detections_per_frame) 
+      {
+        int corner_idx = 0;
+        for (auto corners : detection.second)
+        {
+          // the corner id here is 4 * tag_id + corner_idx, counter clockwise from a certain corner (for blenderproc data start from bottom left)
+          detectionsfile << frame_n << "," << detection.first * 4 + corner_idx << "," << corners.first << "," << corners.second << "\n";
+          corner_idx = corner_idx + 1;
+        }
+        
       }
       frame_n++;
     }
